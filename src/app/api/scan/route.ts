@@ -1,15 +1,25 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Clé API Gemini non configurée sur le serveur.",
+        },
+        { status: 500 },
+      );
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
       return NextResponse.json(
-        { error: "Aucune image reçue" },
+        { success: false, error: "Aucune image reçue" },
         { status: 400 },
       );
     }
@@ -25,7 +35,11 @@ export async function POST(req: Request) {
       Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue ou invalide"}.
     `;
 
-    const base64Data = imageBase64.split(",")[1];
+    // Sécurisation du découpage Base64
+    const base64Data = imageBase64.includes(",")
+      ? imageBase64.split(",")[1]
+      : imageBase64;
+
     const imagePart = {
       inlineData: {
         data: base64Data,
@@ -38,10 +52,10 @@ export async function POST(req: Request) {
     const text = response.text();
 
     return NextResponse.json({ success: true, data: text });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erreur lors de l'analyse IA:", error);
     return NextResponse.json(
-      { success: false, error: "Erreur serveur" },
+      { success: false, error: error.message || "Erreur serveur" },
       { status: 500 },
     );
   }
