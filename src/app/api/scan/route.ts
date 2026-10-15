@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
@@ -24,9 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-    });
+    const modelName = "gemini-2.5-flash" ;
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
@@ -42,18 +40,22 @@ export async function POST(req: Request) {
       ? imageBase64.split(",")[1]
       : imageBase64;
 
-    const imagePart = {
-      inlineData: {
-        data: base64Data,
-        mimeType: "image/jpeg",
-      },
-    };
+    const response = await ai.models.generateContent ({
+      model: "gemini-2.5-flash",
+      contents: [
+        prompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: "image/jpeg",
+          }
+        }
+      ]
+    }
+    );
 
-    const result = await model.generateContent([prompt, imagePart]);
-    const response = await result.response;
-    const text = response.text();
 
-    return NextResponse.json({ success: true, data: text });
+    return NextResponse.json({ success: true, data: response.text });
   } catch (error: any) {
     console.error("Erreur lors de l'analyse IA:", error);
     return NextResponse.json(
