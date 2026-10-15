@@ -24,7 +24,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+    });
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
