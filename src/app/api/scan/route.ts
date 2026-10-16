@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const modelName = "gemini-2.5-pro";
+    const modelName = "gemini-3.1-pro-preview";
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
