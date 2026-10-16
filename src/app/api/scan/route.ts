@@ -1,20 +1,23 @@
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
       return NextResponse.json(
         {
           success: false,
-          error: "Clé API Gemini non configurée sur le serveur.",
+          error: "Jeton GitHub manquant.",
         },
         { status: 500 },
       );
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const client = new OpenAI ({baseURL: "https://models.inference.ai.azure.com",
+      apiKey: token
+    });
+
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
@@ -24,7 +27,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const modelName = "gemini-3.1-flash";
+    const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
@@ -35,26 +38,20 @@ export async function POST(req: Request) {
       Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue ou invalide"}.
     `;
 
-    const base64Data = imageBase64.includes(",")
-      ? imageBase64.split(",")[1]
-      : imageBase64;
-
-    const response = await ai.models.generateContent ({
-      model: modelName,
-      contents: [
-        prompt,
-        {
-          inlineData: {
-            data: base64Data,
-            mimeType: "image/jpeg",
-          }
-        }
+    const response = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "user", content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url:`data:image/jpeg;base64,${base64Data}` } }
       ]
     }
-    );
+  ]
+    });
 
-
-    return NextResponse.json({ success: true, data: response.text });
+    const test = response.choices[0]?.message?.content || "";
+    return NextResponse.json({ success: true, data: test });
+    
   } catch (error: any) {
     console.error("Erreur lors de l'analyse IA:", error);
     return NextResponse.json(
