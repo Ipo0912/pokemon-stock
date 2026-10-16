@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       : imageBase64;
 
     const response = await ai.models.generateContent ({
-      model: "gemini-2.5-pro",
+      model: modelName,
       contents: [
         prompt,
         {
