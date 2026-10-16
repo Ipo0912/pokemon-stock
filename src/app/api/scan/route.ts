@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const modelName = "gemini-2.0-flash";
+    const modelName = "gemini-2.5-pro";
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
@@ -35,7 +35,6 @@ export async function POST(req: Request) {
       Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue ou invalide"}.
     `;
 
-    // Sécurisation du découpage Base64
     const base64Data = imageBase64.includes(",")
       ? imageBase64.split(",")[1]
       : imageBase64;
