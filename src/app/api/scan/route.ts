@@ -14,8 +14,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const client = new OpenAI ({baseURL: "https://models.inference.ai.azure.com",
-      apiKey: token
+    const client = new OpenAI({
+      baseURL: "https://models.github.ai/inference",
+      apiKey: token,
     });
 
     const { imageBase64 } = await req.json();
