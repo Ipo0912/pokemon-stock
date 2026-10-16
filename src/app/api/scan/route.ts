@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     const client = new OpenAI({
-      baseURL: "https://models.github.ai/inference",
+      baseURL: "https://models.inference.ai.azure.com",
       apiKey: token,
     });
 
@@ -49,6 +49,17 @@ export async function POST(req: Request) {
     }
   ]
     });
+
+    if (!response.choices || response.choices.length === 0) {
+      console.error("Réponse API invalide:", response);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Le serveur IA n'a pas répondu correctement.",
+        },
+        { status: 500 },
+      );
+    }
 
     const test = response.choices[0]?.message?.content || "";
     return NextResponse.json({ success: true, data: test });
