@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const modelName = "gemini-2.5-flash" ;
+    const modelName = "gemini-3.8-flash";
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
