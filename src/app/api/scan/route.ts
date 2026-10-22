@@ -3,12 +3,13 @@ import { NextResponse } from "next/server";
 
 // Modèle principal en premier : le plus stable
 const MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
   "gemini-3.8-flash",
   "gemini-3.7-flash",
   "gemini-3.5-flash",
-  "gemini-flash-latest",
 ];
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -57,7 +58,10 @@ Sinon renvoie {"erreur": "Carte non reconnue"}.`;
                 ],
               },
             ],
-            config: { responseMimeType: "application/json" },
+            config: {
+              responseMimeType: "application/json",
+              thinkingConfig: { thinkingLevel: "low" },
+            },
           });
 
           const data = JSON.parse(response.text ?? "{}");
