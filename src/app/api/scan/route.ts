@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { NextResponse } from "next/server";
 
 // Modèle principal en premier : le plus stable
@@ -60,7 +60,7 @@ Sinon renvoie {"erreur": "Carte non reconnue"}.`;
             ],
             config: {
               responseMimeType: "application/json",
-              thinkingConfig: { thinkingLevel: "low" },
+              thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
             },
           });
 
