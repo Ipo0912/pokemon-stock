@@ -1,16 +1,27 @@
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const token = process.env.GITHUB_TOKEN;
+    const token = process.env.OPENROUTER_API_KEY;
     if (!token) {
       return NextResponse.json(
-        { success: false, error: "Jeton GITHUB_TOKEN manquant." },
+        { success: false, error: "Clé API OpenRouter manquante." },
         { status: 500 },
       );
     }
 
+    const client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: token,
+      defaultHeaders: {
+        "HTTP-Referer": "https://pokemon-stock.vercel.app", // Requis par OpenRouter
+        "X-Title": "Pokemon Scanner",
+      },
+    });
+
     const { imageBase64 } = await req.json();
+
     if (!imageBase64) {
       return NextResponse.json(
         { success: false, error: "Aucune image reçue." },
@@ -24,63 +35,31 @@ export async function POST(req: Request) {
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
-      Si c'est une carte Pokémon, renvoie UNIQUEMENT un objet JSON avec ces 3 propriétés exactes (sans markdown, sans backticks) :
+      Si c'est une carte Pokémon, renvoie UNIQUEMENT un objet JSON avec ces 3 propriétés exactes (sans markdown, sans texte autour) :
       {"nom": "NomDuPokemon", "extension": "NomDeLextension", "numero": "XXX/YYY"}
       Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue"}.
     `;
 
-    // Appel direct avec gestion du format texte brut
-    const res = await fetch(
-      "https://models.inference.ai.azure.com/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
+    const response = await client.chat.completions.create({
+      model: "meta-llama/llama-3.2-11b-vision-instruct:free",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
             {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                {
-                  type: "image_url",
-                  image_url: { url: `data:image/jpeg;base64,${base64Data}` },
-                },
-              ],
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${base64Data}` },
             },
           ],
-        }),
-      },
-    );
+        },
+      ],
+    });
 
-    const rawText = await res.text();
-    console.log(`Statut HTTP: ${res.status}`);
-    console.log("Corps de la réponse :", rawText);
-
-    if (!res.ok) {
-      return NextResponse.json(
-        { success: false, error: `Erreur ${res.status} : ${rawText}` },
-        { status: 500 },
-      );
-    }
-
-    let parsed;
-    try {
-      parsed = JSON.parse(rawText);
-    } catch {
-      return NextResponse.json(
-        { success: false, error: `Réponse non-JSON reçue : ${rawText}` },
-        { status: 500 },
-      );
-    }
-
-    const content = parsed.choices?.[0]?.message?.content ?? "";
+    const content = response.choices[0]?.message?.content ?? "";
     return NextResponse.json({ success: true, data: content });
   } catch (error: any) {
-    console.error("Erreur serveur :", error);
+    console.error("Erreur IA :", error);
     return NextResponse.json(
       { success: false, error: error.message || "Erreur serveur" },
       { status: 500 },
