@@ -11,6 +11,7 @@ export default function Camera() {
     nom?: string;
     extension?: string;
     numero?: string;
+    langue?: string;
     erreur?: string;
   } | null>(null);
 
@@ -36,11 +37,8 @@ export default function Camera() {
       const resultat = await reponse.json();
 
       if (resultat.success) {
-        const donneesPropres = JSON.parse(
-          resultat.data.replace(/```json/g, "").replace(/```/g, ""),
-        );
-        setPokemonData(donneesPropres);
-        console.log("Carte identifiée :", donneesPropres);
+        setPokemonData(resultat.data);
+        console.log("Carte identifiée :", resultat.data);
       } else {
         setPokemonData({
           erreur: resultat.error || "Erreur lors de l'analyse.",
