@@ -1,4 +1,3 @@
-import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -6,29 +5,23 @@ export async function POST(req: Request) {
     const token = process.env.GITHUB_TOKEN;
     if (!token) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Jeton GitHub manquant.",
-        },
+        { success: false, error: "Jeton GITHUB_TOKEN manquant." },
         { status: 500 },
       );
     }
-
-    const client = new OpenAI({
-      baseURL: "https://models.github.ai/inference",
-      apiKey: token,
-    });
 
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
       return NextResponse.json(
-        { success: false, error: "Aucune image reçue" },
+        { success: false, error: "Aucune image reçue." },
         { status: 400 },
       );
     }
 
-    const base64Data = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
+    const base64Data = imageBase64.includes(",")
+      ? imageBase64.split(",")[1]
+      : imageBase64;
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
@@ -39,37 +32,49 @@ export async function POST(req: Request) {
       Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue ou invalide"}.
     `;
 
-    const response = await client.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
+    const res = await fetch(
+      "https://models.github.ai/inference/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
             {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64Data}` },
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                {
+                  type: "image_url",
+                  image_url: { url: `data:image/jpeg;base64,${base64Data}` },
+                },
+              ],
             },
           ],
-        },
-      ],
-    });
+        }),
+      },
+    );
 
-    console.log("Réponse GitHub:", JSON.stringify(response, null, 2));
+    const data = await res.json();
 
-    if (!response.choices || response.choices.length === 0) {
-      console.error("Réponse API invalide:", response);
+    if (!res.ok) {
+      console.error("Erreur API GitHub:", data);
       return NextResponse.json(
-        { success: false, error: "Le serveur IA n'a pas renvoyé de résultat." },
+        {
+          success: false,
+          error: data.error?.message || `Erreur HTTP ${res.status}`,
+        },
         { status: 500 },
       );
     }
 
-    const test = response.choices[0]?.message?.content || "";
-    return NextResponse.json({ success: true, data: test });
-    
+    const content = data.choices?.[0]?.message?.content ?? "";
+    return NextResponse.json({ success: true, data: content });
   } catch (error: any) {
-    console.error("Erreur lors de l'analyse IA:", error);
+    console.error("Erreur serveur :", error);
     return NextResponse.json(
       { success: false, error: error.message || "Erreur serveur" },
       { status: 500 },
