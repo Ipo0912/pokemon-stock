@@ -11,7 +11,6 @@ export async function POST(req: Request) {
     }
 
     const { imageBase64 } = await req.json();
-
     if (!imageBase64) {
       return NextResponse.json(
         { success: false, error: "Aucune image reçue." },
@@ -25,15 +24,14 @@ export async function POST(req: Request) {
 
     const prompt = `
       Tu es un expert en cartes Pokémon. Analyse cette image.
-      Si c'est une carte Pokémon, renvoie-moi UNIQUEMENT un objet JSON avec ces 3 propriétés exactes (sans aucun texte autour) :
-      - "nom" : le nom du Pokémon, qui ce trouve en haut à gauche de la carte.
-      - "extension" : le nom de l'extension de la carte (en bas à gauche de la carte ou en bas à droite de la carte, selon le type de carte).
-      - "numero" : le numéro de la carte (ex: 045/165) (en bas à gauche de la carte ou en bas à droite de la carte, selon le type de carte).
-      Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue ou invalide"}.
+      Si c'est une carte Pokémon, renvoie UNIQUEMENT un objet JSON avec ces 3 propriétés exactes (sans markdown, sans backticks) :
+      {"nom": "NomDuPokemon", "extension": "NomDeLextension", "numero": "XXX/YYY"}
+      Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue"}.
     `;
 
+    // Appel direct avec gestion du format texte brut
     const res = await fetch(
-      "https://models.github.ai/inference/chat/completions",
+      "https://models.inference.ai.azure.com/chat/completions",
       {
         method: "POST",
         headers: {
@@ -58,20 +56,28 @@ export async function POST(req: Request) {
       },
     );
 
-    const data = await res.json();
+    const rawText = await res.text();
+    console.log(`Statut HTTP: ${res.status}`);
+    console.log("Corps de la réponse :", rawText);
 
     if (!res.ok) {
-      console.error("Erreur API GitHub:", data);
       return NextResponse.json(
-        {
-          success: false,
-          error: data.error?.message || `Erreur HTTP ${res.status}`,
-        },
+        { success: false, error: `Erreur ${res.status} : ${rawText}` },
         { status: 500 },
       );
     }
 
-    const content = data.choices?.[0]?.message?.content ?? "";
+    let parsed;
+    try {
+      parsed = JSON.parse(rawText);
+    } catch {
+      return NextResponse.json(
+        { success: false, error: `Réponse non-JSON reçue : ${rawText}` },
+        { status: 500 },
+      );
+    }
+
+    const content = parsed.choices?.[0]?.message?.content ?? "";
     return NextResponse.json({ success: true, data: content });
   } catch (error: any) {
     console.error("Erreur serveur :", error);
