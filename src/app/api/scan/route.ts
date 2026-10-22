@@ -1,22 +1,17 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const token = process.env.FREELLMAPI_KEY;
+    const token = process.env.GEMINI_API_KEY;
     if (!token) {
       return NextResponse.json(
-        { success: false, error: "Clé API FreeLLMAPI manquante." },
+        { success: false, error: "Clé GEMINI_API_KEY manquante." },
         { status: 500 },
       );
     }
 
-    // Connexion aux serveurs de FreeLLMAPI
-    const client = new OpenAI({
-      baseURL: "https://api.freellmapi.co/v1",
-      apiKey: token,
-    });
-
+    const ai = new GoogleGenAI({ apiKey: token });
     const { imageBase64 } = await req.json();
 
     if (!imageBase64) {
@@ -37,26 +32,26 @@ export async function POST(req: Request) {
       Si ce n'est pas une carte Pokémon, renvoie {"erreur": "Carte non reconnue"}.
     `;
 
-    const response = await client.chat.completions.create({
-      model: "qwen/qwen3.8-omni-flash:free",
-      messages: [
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [
         {
           role: "user",
-          content: [
-            { type: "text", text: prompt },
-            {
-              type: "image_url",
-              image_url: { url: `data:image/jpeg;base64,${base64Data}` },
-            },
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: "image/jpeg", data: base64Data } },
           ],
         },
       ],
     });
 
-    const content = response.choices[0]?.message?.content ?? "";
-    return NextResponse.json({ success: true, data: content });
+    const content = response.text || "";
+    return NextResponse.json({
+      success: true,
+      data: content.replace(/```json|```/g, "").trim(),
+    });
   } catch (error: any) {
-    console.error("Erreur IA :", error);
+    console.error("Erreur Gemini :", error);
     return NextResponse.json(
       { success: false, error: error.message || "Erreur serveur" },
       { status: 500 },
