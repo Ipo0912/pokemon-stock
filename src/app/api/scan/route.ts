@@ -42,21 +42,25 @@ export async function POST(req: Request) {
     const response = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "user", content: [
-          { type: "text", text: prompt },
-          { type: "image_url", image_url: { url:`data:image/jpeg;base64,${base64Data}` } }
-      ]
-    }
-  ]
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "image_url",
+              image_url: { url: `data:image/jpeg;base64,${base64Data}` },
+            },
+          ],
+        },
+      ],
     });
+
+    console.log("Réponse GitHub:", JSON.stringify(response, null, 2));
 
     if (!response.choices || response.choices.length === 0) {
       console.error("Réponse API invalide:", response);
       return NextResponse.json(
-        {
-          success: false,
-          error: "Le serveur IA n'a pas répondu correctement.",
-        },
+        { success: false, error: "Le serveur IA n'a pas renvoyé de résultat." },
         { status: 500 },
       );
     }
