@@ -3,21 +3,18 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const token = process.env.OPENROUTER_API_KEY;
+    const token = process.env.FREELLMAPI_KEY;
     if (!token) {
       return NextResponse.json(
-        { success: false, error: "Clé API OpenRouter manquante." },
+        { success: false, error: "Clé API FreeLLMAPI manquante." },
         { status: 500 },
       );
     }
 
+    // Connexion aux serveurs de FreeLLMAPI
     const client = new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
+      baseURL: "https://api.freellmapi.co/v1",
       apiKey: token,
-      defaultHeaders: {
-        "HTTP-Referer": "https://pokemon-stock.vercel.app", // Requis par OpenRouter
-        "X-Title": "Pokemon Scanner",
-      },
     });
 
     const { imageBase64 } = await req.json();
@@ -41,7 +38,7 @@ export async function POST(req: Request) {
     `;
 
     const response = await client.chat.completions.create({
-      model: "qwen/qwen-2-vl-7b-instruct:free",
+      model: "qwen/qwen3.8-omni-flash:free",
       messages: [
         {
           role: "user",
