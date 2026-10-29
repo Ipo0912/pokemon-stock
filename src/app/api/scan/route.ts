@@ -1,14 +1,14 @@
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { NextResponse } from "next/server";
 
-export const maxDuration = 60; // évite la coupure trop rapide sur Vercel
+export const maxDuration = 60;
 
 const MODELS = [
   "gemini-3.5-flash-lite",
   "gemini-3.1-flash-lite",
   "gemini-3.8-flash",
 ];
-const MAX_RETRIES = 1; // 2 essais maximum par modèle
+const MAX_RETRIES = 1;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -63,7 +63,6 @@ Sinon renvoie {"erreur": "Carte non reconnue"}.`;
 
           const data = JSON.parse(response.text ?? "{}");
 
-          // Gemini n'a pas reconnu de carte
           if (data.erreur) {
             return NextResponse.json(
               { success: false, error: data.erreur },
@@ -80,9 +79,9 @@ Sinon renvoie {"erreur": "Carte non reconnue"}.`;
           );
 
           const temporaire = err?.status === 503 || err?.status === 429;
-          if (!temporaire) break; // erreur définitive : modèle suivant
+          if (!temporaire) break;
 
-          if (attempt < MAX_RETRIES) await sleep(1000); // pas de pause inutile au dernier essai
+          if (attempt < MAX_RETRIES) await sleep(1000);
         }
       }
     }
