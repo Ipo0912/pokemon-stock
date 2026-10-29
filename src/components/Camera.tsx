@@ -6,6 +6,8 @@ import { supabase } from "../lib/supabase";
 
 export default function Camera() {
   const webcamRef = useRef<Webcam>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -18,6 +20,7 @@ export default function Camera() {
     erreur?: string;
   } | null>(null);
 
+  // 1. Fonction existante pour la webcam
   const capture = useCallback(() => {
     const imageBase64 = webcamRef.current?.getScreenshot();
     if (imageBase64) {
@@ -25,6 +28,20 @@ export default function Camera() {
       analyserImage(imageBase64);
     }
   }, [webcamRef]);
+
+  // 2. NOUVELLE FONCTION : Gestion de l'upload de fichier
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setImageSrc(base64String);
+        analyserImage(base64String);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const analyserImage = async (imageBase64: string) => {
     setIsScanning(true);
@@ -86,6 +103,8 @@ export default function Camera() {
     setImageSrc(null);
     setPokemonData(null);
     setSaveMessage(null);
+    // Réinitialise le champ file pour permettre de re-sélectionner la même image
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -108,19 +127,36 @@ export default function Camera() {
         )}
       </div>
 
-      <div className="mt-8 flex gap-4">
+      <div className="mt-8 flex gap-3 flex-wrap justify-center w-full">
         {!imageSrc ? (
-          <button
-            onClick={capture}
-            className="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full transition-all shadow-blue-500/30 shadow-lg"
-          >
-            Scanner la carte
-          </button>
+          <>
+            <button
+              onClick={capture}
+              className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-blue-500/30 shadow-lg"
+            >
+              Scanner
+            </button>
+
+            {/* Input fichier caché et son bouton déclencheur */}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-purple-500/30 shadow-lg"
+            >
+              Importer
+            </button>
+          </>
         ) : (
           <button
             onClick={resetCamera}
             disabled={isScanning || isSaving}
-            className="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-full transition-all disabled:opacity-50"
+            className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all disabled:opacity-50"
           >
             Reprendre une photo
           </button>
@@ -177,7 +213,6 @@ export default function Camera() {
             </p>
           </div>
 
-          {}
           {saveMessage ? (
             <div
               className={`p-3 text-center rounded-lg font-medium ${saveMessage.includes("✅") ? "bg-green-900/30 text-green-400 border border-green-500/30" : "bg-red-900/30 text-red-400 border border-red-500/30"}`}
