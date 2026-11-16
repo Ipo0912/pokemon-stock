@@ -1,26 +1,30 @@
 @import "tailwindcss";
 
+/* Palette du site : on change les couleurs ici, tout le reste suit. */
+@theme {
+  --color-fond: #e8ecf1;        /* fond des pages */
+  --color-fond-doux: #f4f6f9;   /* champs, lignes, zones secondaires */
+  --color-bordure: #cdd5de;
+  --color-encre: #1f2933;       /* texte principal */
+  --color-doux: #5f6b7a;        /* texte secondaire */
+  --color-entete: #3a4b5f;      /* en-têtes de panneaux */
+  --color-accent: #b0453f;      /* rouge atténué : navbar, boutons */
+  --color-accent-fonce: #94372f;
+  --color-bleu: #416d8f;        /* sélection, onglet actif */
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-fond);
+  color: var(--color-encre);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
 }

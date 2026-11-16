@@ -8,7 +8,7 @@ import {
   useMapEvents,
   useMap,
 } from "react-leaflet";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -23,6 +23,7 @@ const iconeParDefaut = L.icon({
   shadowSize: [41, 41],
 });
 
+// Vert : emplacement en cours d'ajout
 const iconeNouveau = L.icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
@@ -33,7 +34,7 @@ const iconeNouveau = L.icon({
   shadowSize: [41, 41],
 });
 
-// NOUVEAU : Icône rouge pour les résultats de recherche
+// Rouge : résultats de recherche
 const iconeRecherche = L.icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -46,9 +47,9 @@ const iconeRecherche = L.icon({
 
 const iconeUtilisateur = L.divIcon({
   className: "custom-div-icon",
-  html: "<div style='background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);'></div>",
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
+  html: "<div style='background-color: #416d8f; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white;'></div>",
+  iconSize: [14, 14],
+  iconAnchor: [7, 7],
 });
 
 function GestionnaireClic({
@@ -78,7 +79,24 @@ function ControleurCamera({
   return null;
 }
 
-// NOUVEAU : On ajoute "resultatsRecherche" dans les paramètres
+// Bouton "copier" utilisé dans les popups
+function BoutonCopier({ texte }: { texte: string }) {
+  const [copie, setCopie] = useState(false);
+
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(texte);
+        setCopie(true);
+        setTimeout(() => setCopie(false), 2000);
+      }}
+      className="px-2 py-1 border border-bordure rounded-md text-xs text-encre hover:bg-fond cursor-pointer"
+    >
+      {copie ? "Copié" : "Copier l'adresse"}
+    </button>
+  );
+}
+
 export default function CarteInteractive({
   magasins,
   onLocationSelect,
@@ -86,6 +104,7 @@ export default function CarteInteractive({
   centreCarte,
   positionUtilisateur,
   resultatsRecherche = [],
+  onSearchResultClick,
 }: any) {
   return (
     <MapContainer
@@ -110,41 +129,33 @@ export default function CarteInteractive({
         </Marker>
       )}
 
-      {/* Affichage des résultats de recherche en rouge avec BOUTON COPIER */}
+      {/* Résultats de recherche (marqueurs rouges) */}
       {resultatsRecherche.map((res: any, index: number) => (
         <Marker
           key={`search-${index}`}
           position={[parseFloat(res.lat), parseFloat(res.lon)]}
           icon={iconeRecherche}
+          eventHandlers={{
+            click: () => {
+              if (onSearchResultClick) onSearchResultClick(index);
+            },
+          }}
         >
           <Popup>
-            <div className="text-center max-w-[200px]">
-              <strong className="text-slate-900 block mb-1">
+            <div className="max-w-[200px]">
+              <strong className="text-encre block mb-1">
                 {res.name || res.display_name.split(",")[0]}
               </strong>
-              <span className="text-xs text-slate-600 block leading-tight mb-2">
+              <span className="text-xs text-doux block leading-tight mb-2">
                 {res.display_name}
               </span>
-
-              <button
-                onClick={(e) => {
-                  navigator.clipboard.writeText(res.display_name);
-                  // Petit effet visuel pour confirmer la copie
-                  e.currentTarget.innerText = "✅ Copié !";
-                  setTimeout(() => {
-                    if (e.currentTarget)
-                      e.currentTarget.innerText = "📋 Copier l'adresse";
-                  }, 2000);
-                }}
-                className="px-2 py-1 mx-auto bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-[10px] font-bold rounded flex items-center justify-center transition-all cursor-pointer"
-              >
-                📋 Copier l'adresse
-              </button>
+              <BoutonCopier texte={res.display_name} />
             </div>
           </Popup>
         </Marker>
       ))}
 
+      {/* Boutiques enregistrées (marqueurs bleus) */}
       {magasins.map((mag: any) => (
         <Marker
           key={mag.id}
@@ -152,7 +163,17 @@ export default function CarteInteractive({
           icon={iconeParDefaut}
         >
           <Popup>
-            <strong className="text-slate-900 text-base">{mag.nom}</strong>
+            <div className="max-w-[200px]">
+              <strong className="text-encre block mb-1">{mag.nom}</strong>
+              {mag.adresse && (
+                <span className="text-xs text-doux block leading-tight mb-2">
+                  {mag.adresse}
+                </span>
+              )}
+              <BoutonCopier
+                texte={mag.adresse ? `${mag.nom}, ${mag.adresse}` : mag.nom}
+              />
+            </div>
           </Popup>
         </Marker>
       ))}

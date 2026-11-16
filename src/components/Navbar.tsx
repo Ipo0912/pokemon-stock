@@ -15,7 +15,7 @@ export default function Navbar() {
       setSession(session);
     });
 
-    // Écoute les changements (si l'utilisateur se connecte ou se déconnecte)
+    // Écoute les changements (connexion / déconnexion)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -30,52 +30,40 @@ export default function Navbar() {
     router.push("/login");
   };
 
+  const lien = (href: string) =>
+    `text-sm text-white underline-offset-4 ${
+      pathname === href ? "font-semibold underline" : "hover:underline"
+    }`;
+
   return (
-    <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-md">
-      <div className="max-w-4xl mx-auto p-4 flex flex-wrap justify-between items-center gap-4">
-        {/* Titre cliquable (retour à l'accueil) */}
-        <Link
-          href="/"
-          className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 uppercase tracking-widest hover:opacity-80 transition-opacity"
-        >
+    <nav className="bg-accent border-b border-accent-fonce sticky top-0 z-50">
+      <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+        <Link href="/" className="font-bold text-lg text-white">
           Poké-Stock
         </Link>
 
-        {/* Liens de navigation */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          <Link
-            href="/"
-            className={`font-medium transition-colors ${pathname === "/" ? "text-blue-400" : "text-slate-400 hover:text-white"}`}
-          >
+        <div className="flex items-center gap-5">
+          <Link href="/" className={lien("/")}>
             Scanner
           </Link>
-          <Link
-            href="/galerie"
-            className={`font-medium transition-colors ${pathname === "/galerie" ? "text-blue-400" : "text-slate-400 hover:text-white"}`}
-          >
+          <Link href="/galerie" className={lien("/galerie")}>
             Collection
           </Link>
-
-          {/* NOUVEAU : LIEN VERS LA MAP */}
-          <Link
-            href="/map"
-            className={`font-medium transition-colors ${pathname === "/map" ? "text-blue-400" : "text-slate-400 hover:text-white"}`}
-          >
-            Map
+          <Link href="/map" className={lien("/map")}>
+            Boutiques
           </Link>
 
-          {/* Bouton de connexion / déconnexion */}
           {session ? (
             <button
               onClick={handleLogout}
-              className="px-3 py-2 bg-red-900/30 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition-all text-sm font-bold"
+              className="px-3 py-1.5 text-sm text-white border border-white/70 rounded-md hover:bg-accent-fonce"
             >
               Déconnexion
             </button>
           ) : (
             <Link
               href="/login"
-              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all text-sm font-bold"
+              className="px-3 py-1.5 text-sm font-medium bg-white text-accent rounded-md hover:bg-fond-doux"
             >
               Connexion
             </Link>

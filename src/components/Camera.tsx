@@ -18,6 +18,11 @@ const traduireLangue = (code?: string) => {
   return langues[code.toUpperCase()] || code;
 };
 
+const btnPrimaire =
+  "py-2 px-4 bg-accent text-white text-sm rounded-md hover:bg-accent-fonce disabled:opacity-40";
+const btnSecondaire =
+  "py-2 px-4 bg-white text-encre text-sm border border-bordure rounded-md hover:bg-fond disabled:opacity-40";
+
 export default function Camera() {
   const webcamRef = useRef<Webcam>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,6 +31,7 @@ export default function Camera() {
   const [isScanning, setIsScanning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [saveOk, setSaveOk] = useState(false);
 
   // États pour les ajouts manuels
   const [prixManuel, setPrixManuel] = useState<string>("");
@@ -105,7 +111,8 @@ export default function Camera() {
       } = await supabase.auth.getSession();
 
       if (!session) {
-        setSaveMessage("❌ Vous devez être connecté pour sauvegarder.");
+        setSaveOk(false);
+        setSaveMessage("Vous devez être connecté pour sauvegarder.");
         setIsSaving(false);
         return;
       }
@@ -125,7 +132,8 @@ export default function Camera() {
       if (erreurRecherche) throw erreurRecherche;
 
       if (cartesExistantes && cartesExistantes.length > 0) {
-        setSaveMessage("Cette carte est déjà dans votre collection !");
+        setSaveOk(false);
+        setSaveMessage("Cette carte est déjà dans votre collection.");
         setIsSaving(false);
         return;
       }
@@ -147,10 +155,12 @@ export default function Camera() {
 
       if (error) throw error;
 
-      setSaveMessage("✅ Carte sauvegardée avec succès !");
+      setSaveOk(true);
+      setSaveMessage("Carte ajoutée à votre collection.");
     } catch (error) {
       console.error("Erreur lors de la sauvegarde :", error);
-      setSaveMessage("❌ Erreur lors de la sauvegarde.");
+      setSaveOk(false);
+      setSaveMessage("Erreur lors de la sauvegarde.");
     } finally {
       setIsSaving(false);
     }
@@ -167,7 +177,7 @@ export default function Camera() {
 
   return (
     <div className="flex flex-col items-center w-full max-w-sm mx-auto">
-      <div className="w-full bg-black rounded-xl overflow-hidden border-2 border-slate-700 shadow-lg">
+      <div className="w-full bg-bordure rounded-md overflow-hidden border border-bordure">
         {!imageSrc ? (
           <Webcam
             audio={false}
@@ -185,13 +195,10 @@ export default function Camera() {
         )}
       </div>
 
-      <div className="mt-8 flex gap-3 flex-wrap justify-center w-full">
+      <div className="mt-4 flex gap-2 w-full">
         {!imageSrc ? (
           <>
-            <button
-              onClick={capture}
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all shadow-blue-500/30 shadow-lg"
-            >
+            <button onClick={capture} className={`flex-1 ${btnPrimaire}`}>
               Scanner
             </button>
             <input
@@ -203,16 +210,16 @@ export default function Camera() {
             />
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all shadow-purple-500/30 shadow-lg"
+              className={`flex-1 ${btnSecondaire}`}
             >
-              Importer
+              Importer une image
             </button>
           </>
         ) : (
           <button
             onClick={resetCamera}
             disabled={isScanning || isSaving}
-            className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+            className={`w-full ${btnSecondaire}`}
           >
             Reprendre une photo
           </button>
@@ -220,126 +227,104 @@ export default function Camera() {
       </div>
 
       {isScanning && (
-        <div className="mt-6 flex items-center gap-3 text-blue-400">
-          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-              fill="none"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <span className="font-medium animate-pulse">
-            Analyse de l'image en cours...
-          </span>
-        </div>
+        <p className="mt-4 text-sm text-doux">Analyse de l'image en cours...</p>
       )}
 
       {pokemonData && !pokemonData.erreur && (
-        <div className="mt-8 w-full p-6 bg-slate-800 rounded-xl text-white shadow-xl border border-blue-500/30">
-          <h3 className="text-xl font-black text-blue-400 mb-4 uppercase tracking-wider text-center">
+        <div className="mt-6 w-full border border-bordure rounded-md bg-white text-encre overflow-hidden shadow-sm">
+          <h2 className="bg-entete text-white text-sm font-medium px-4 py-2">
             Carte identifiée
-          </h3>
-          <div className="space-y-2 text-sm sm:text-base mb-2">
-            <p className="flex justify-between border-b border-slate-700 pb-2">
-              <span className="text-slate-400">Pokémon</span>
-              <span className="font-bold">{pokemonData.nom}</span>
-            </p>
-            <p className="flex justify-between border-b border-slate-700 pb-2">
-              <span className="text-slate-400">Extension</span>
-              <span className="font-bold">{pokemonData.extension}</span>
-            </p>
-            <p className="flex justify-between border-b border-slate-700 pb-2">
-              <span className="text-slate-400">Numéro</span>
-              <span className="font-bold text-blue-300">
-                {pokemonData.numero}
-              </span>
-            </p>
-            <p className="flex justify-between pb-1">
-              <span className="text-slate-400">Langue</span>
-              <span className="font-bold uppercase">{pokemonData.langue}</span>
-            </p>
-          </div>
+          </h2>
+          <div className="p-4">
+            <dl className="text-sm divide-y divide-bordure/60 mb-4">
+              <div className="flex justify-between py-2">
+                <dt className="text-doux">Pokémon</dt>
+                <dd>{pokemonData.nom}</dd>
+              </div>
+              <div className="flex justify-between py-2">
+                <dt className="text-doux">Extension</dt>
+                <dd>{pokemonData.extension}</dd>
+              </div>
+              <div className="flex justify-between py-2">
+                <dt className="text-doux">Numéro</dt>
+                <dd>{pokemonData.numero}</dd>
+              </div>
+              <div className="flex justify-between py-2">
+                <dt className="text-doux">Langue</dt>
+                <dd className="uppercase">{pokemonData.langue}</dd>
+              </div>
+            </dl>
 
-          <div className="flex gap-2 mb-6 mt-4">
-            <a
-              href={`https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${pokemonData.nom || ""} ${pokemonData.numero ? pokemonData.numero.split("/")[0] : ""}`.trim())}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-2 bg-[#1785e0] hover:bg-blue-500 text-white text-xs font-bold text-center rounded-lg transition-all flex items-center justify-center gap-1"
-            >
-              🔍 Cardmarket
-            </a>
-            <a
-              href={`https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(`${pokemonData.nom} ${pokemonData.numero} ${traduireLangue(pokemonData.langue)}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-2 bg-slate-200 text-[#e53238] border border-slate-300 hover:bg-white text-xs font-bold text-center rounded-lg transition-all flex items-center justify-center gap-1"
-            >
-              🔍 eBay
-            </a>
-          </div>
-
-          <div className="mb-4 bg-slate-900 p-3 rounded-lg border border-slate-700">
-            <label className="block text-slate-400 text-xs uppercase tracking-wider mb-2 text-center">
-              Ranger dans le dossier
-            </label>
-            <select
-              value={categorieChoisie}
-              onChange={(e) => setCategorieChoisie(e.target.value)}
-              className="w-full text-center bg-slate-800 text-white p-2 rounded outline-none font-bold cursor-pointer"
-            >
-              <option value="Ultra rare">Ultra rare</option>
-              <option value="Full art">Full art</option>
-              <option value="Ar">Ar</option>
-              <option value="Promo">Promo</option>
-              <option value="Autre">Autre</option>
-            </select>
-          </div>
-
-          <div className="mb-6 bg-slate-900 p-3 rounded-lg border border-slate-700">
-            <label className="block text-slate-400 text-xs uppercase tracking-wider mb-2 text-center">
-              Valeur confirmée (€)
-            </label>
-            <input
-              type="number"
-              value={prixManuel}
-              onChange={(e) => setPrixManuel(e.target.value)}
-              placeholder="Ex: 15.50"
-              className="w-full text-center bg-transparent text-emerald-400 font-bold text-2xl outline-none"
-            />
-          </div>
-
-          {saveMessage ? (
-            <div
-              className={`p-3 text-center rounded-lg font-medium ${saveMessage.includes("✅") ? "bg-green-900/30 text-green-400 border border-green-500/30" : "bg-red-900/30 text-red-400 border border-red-500/30"}`}
-            >
-              {saveMessage}
+            <div className="flex gap-2 mb-4">
+              <a
+                href={`https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${encodeURIComponent(`${pokemonData.nom || ""} ${pokemonData.numero ? pokemonData.numero.split("/")[0] : ""}`.trim())}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-1.5 text-sm text-center border border-bordure rounded-md hover:bg-fond"
+              >
+                Voir sur Cardmarket
+              </a>
+              <a
+                href={`https://www.ebay.fr/sch/i.html?_nkw=${encodeURIComponent(`${pokemonData.nom} ${pokemonData.numero} ${traduireLangue(pokemonData.langue)}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 py-1.5 text-sm text-center border border-bordure rounded-md hover:bg-fond"
+              >
+                Voir sur eBay
+              </a>
             </div>
-          ) : (
-            <button
-              onClick={sauvegarderCarte}
-              disabled={isSaving}
-              className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-all flex justify-center items-center gap-2 disabled:opacity-50"
-            >
-              {isSaving ? "Sauvegarde..." : "Ajouter à ma collection"}
-            </button>
-          )}
+
+            <div className="mb-3">
+              <label className="block text-sm text-encre mb-1">Dossier</label>
+              <select
+                value={categorieChoisie}
+                onChange={(e) => setCategorieChoisie(e.target.value)}
+                className="w-full border border-bordure rounded-md px-3 py-2 text-sm bg-fond-doux focus:bg-white focus:outline-none focus:border-bleu focus:ring-2 focus:ring-bleu/20"
+              >
+                <option value="Ultra rare">Ultra rare</option>
+                <option value="Full art">Full art</option>
+                <option value="Ar">Ar</option>
+                <option value="Promo">Promo</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm text-encre mb-1">
+                Valeur (€)
+              </label>
+              <input
+                type="number"
+                value={prixManuel}
+                onChange={(e) => setPrixManuel(e.target.value)}
+                placeholder="Ex : 15.50"
+                className="w-full border border-bordure rounded-md px-3 py-2 text-sm bg-fond-doux focus:bg-white focus:outline-none focus:border-bleu focus:ring-2 focus:ring-bleu/20"
+              />
+            </div>
+
+            {saveMessage ? (
+              <p
+                className={`p-3 text-sm rounded-md border ${saveOk ? "bg-green-50 text-green-800 border-green-300" : "bg-red-50 text-red-800 border-red-300"}`}
+              >
+                {saveMessage}
+              </p>
+            ) : (
+              <button
+                onClick={sauvegarderCarte}
+                disabled={isSaving}
+                className={`w-full ${btnPrimaire}`}
+              >
+                {isSaving ? "Ajout en cours..." : "Ajouter à ma collection"}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
       {pokemonData?.erreur && (
-        <div className="mt-6 w-full p-4 bg-red-900/30 border border-red-500/50 rounded-xl text-red-400 text-center font-medium">
+        <p className="mt-6 w-full p-3 text-sm border border-red-300 bg-red-50 text-red-800 rounded-md">
           {pokemonData.erreur}
-        </div>
+        </p>
       )}
     </div>
   );
