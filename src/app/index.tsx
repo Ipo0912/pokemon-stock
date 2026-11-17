@@ -1,9 +1,33 @@
-import { Text, View, StyleSheet } from "react-native";
+import { useEffect } from "react";
+import { View, ActivityIndicator, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { supabase } from "../lib/supabase";
 
 export default function Index() {
+  const router = useRouter();
+
+  useEffect(() => {
+    checkSession();
+  }, []);
+
+  const checkSession = async () => {
+    // Vérifie si une session Supabase existe déjà
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      // Si connecté, direction les onglets (Scanner / Collection / Boutiques)
+      router.replace("/(tabs)");
+    } else {
+      // Sinon, direction la page de connexion
+      router.replace("/login");
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
+      <ActivityIndicator size="large" color="#d9480f" />
     </View>
   );
 }
@@ -11,7 +35,8 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
   },
 });
