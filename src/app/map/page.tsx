@@ -131,7 +131,9 @@ export default function CartePage() {
 
     try {
       const zoneDeRecherche = centreCarte || positionUtilisateur;
-      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(recherche)}&countrycodes=fr&limit=10&addressdetails=1`;
+      let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        recherche,
+      )}&countrycodes=fr&limit=10&addressdetails=1`;
 
       if (zoneDeRecherche) {
         const { lat, lng } = zoneDeRecherche;
@@ -265,7 +267,11 @@ export default function CartePage() {
                       <div
                         key={index}
                         id={`resultat-${index}`}
-                        className={`p-3 rounded-md border ${isSelected ? "border-bleu bg-bleu/10" : "border-bordure bg-fond-doux"}`}
+                        className={`p-3 rounded-md border ${
+                          isSelected
+                            ? "border-bleu bg-bleu/10"
+                            : "border-bordure bg-fond-doux"
+                        }`}
                       >
                         <p
                           className="font-medium text-sm truncate"
